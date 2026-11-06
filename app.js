@@ -86,6 +86,8 @@ async function play(trackId){
  if(isVideo){element.controls=true;element.playsInline=true;$('video-stage').appendChild(element);$('video-stage').hidden=false;}
  element.onloadedmetadata=()=>{if(token===playbackToken)$('duration').textContent=fmt(element.duration)};
  element.ontimeupdate=()=>{if(token!==playbackToken)return;$('current-time').textContent=fmt(element.currentTime);if(element.duration)$('progress').value=element.currentTime/element.duration*1000};
+ element.onplay=()=>{if(token===playbackToken)$('play').textContent='Ⅱ'};
+ element.onpause=()=>{if(token===playbackToken)$('play').textContent='▶'};
  element.onended=()=>{if(token===playbackToken&&current===t)next()};
  element.onerror=()=>{if(token===playbackToken)toast('O arquivo não pôde ser decodificado neste sistema.')};
  element.play().then(()=>{if(token===playbackToken)$('play').textContent='Ⅱ'}).catch(error=>{if(token===playbackToken){console.warn('Falha ao reproduzir mídia',error);toast('Não foi possível reproduzir este formato neste sistema.')}});
