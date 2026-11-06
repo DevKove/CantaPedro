@@ -21,7 +21,41 @@ const fmt=s=>{if(!Number.isFinite(s))return '0:00';let m=Math.floor(s/60),sec=Ma
 const titleOf=n=>n.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim();
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2600)}
 async function init(){db=await openDB();tracks=(await tx('readonly',s=>s.getAll()))||[];tracks.sort((a,b)=>a.title.localeCompare(b.title,'pt-BR'));render();$('file-picker').addEventListener('change',e=>importFiles(e.target.files));$('folder-picker').addEventListener('change',e=>importFiles(e.target.files));}
-async function importFiles(list){const files=[...list].filter(f=>supported.has(ext(f)));if(!files.length){toast('Nenhum formato compatível foi selecionado.');return}let added=0;for(const file of files){const format=ext(file),name=titleOf(file.name),record={id:id(),name:file.name,title:name,artist:'Arquivo local',format,size:file.size,blob:file,addedAt:Date.now(),favorite:false};if(['kar','mid','midi'].includes(format)){try{const parsed=parseMidi(await file.arrayBuffer());record.title=parsed.title||name;record.artist=parsed.artist||'Arquivo MIDI';record.lyrics=parsed.lyrics;record.notes=parsed.notes;record.duration=parsed.duration}catch(e){console.warn('Falha ao ler MIDI/KAR',file.name,e);record.error='MIDI não reconhecido'}}await tx('readwrite',s=>s.put(record));tracks.push(record);added++}tracks.sort((a,b)=>a.title.localeCompare(b.title,'pt-BR'));render();toast(added+' arquivo(s) importado(s) para sua biblioteca.');$('file-picker').value='';$('folder-picker').value=''}
+let importing=false;
+async function importFiles(list){
+ if(importing){toast('Aguarde a importação atual terminar.');return}
+ const files=[...list].filter(file=>supported.has(ext(file)));
+ if(!files.length){toast('Nenhum formato compatível foi selecionado.');return}
+ importing=true;
+ const records=[];
+ try{
+  for(const file of files){
+   const format=ext(file),name=titleOf(file.name);
+   const record={id:id(),name:file.name,title:name,artist:'Arquivo local',format,size:file.size,lastModified:file.lastModified,blob:file,addedAt:Date.now(),favorite:false};
+   if(['kar','mid','midi'].includes(format)){
+    try{
+     const parsed=parseMidi(await file.arrayBuffer());
+     record.title=parsed.title||name;record.artist=parsed.artist||'Arquivo MIDI';record.lyrics=parsed.lyrics;record.notes=parsed.notes;record.duration=parsed.duration;
+    }catch(error){
+     console.warn('Falha ao ler MIDI/KAR',file.name,error);
+     record.error=error.message||'MIDI não reconhecido';
+    }
+   }
+   records.push(record);
+  }
+  await tx('readwrite',store=>{for(const record of records)store.put(record)});
+  tracks.push(...records);
+  tracks.sort((a,b)=>String(a.title||a.name).localeCompare(String(b.title||b.name),'pt-BR'));
+  render();
+  const failed=records.filter(record=>record.error).length;
+  toast(records.length+' arquivo(s) importado(s).'+(failed?' '+failed+' MIDI(s) com erro de leitura.':''));
+ }catch(error){
+  console.error('Falha ao importar arquivos',error);
+  toast('Não foi possível salvar a importação: '+(error.message||'erro no banco local.'));
+ }finally{
+  importing=false;$('file-picker').value='';$('folder-picker').value='';
+ }
+}
 function render(){const query=$('search').value.toLocaleLowerCase('pt-BR');let list=tracks.filter(t=>(t.title+' '+t.artist+' '+t.name).toLocaleLowerCase('pt-BR').includes(query));if(view==='favorites')list=list.filter(t=>t.favorite);if(view==='queue')list=queue.map(id=>tracks.find(t=>t.id===id)).filter(Boolean);if(view==='formats'){list=[];$('empty').querySelector('h3').textContent='Formatos compatíveis';$('empty').querySelector('p').innerHTML='KAR, MID, MIDI · MP3, WAV, OGG, FLAC, M4A, AAC · MP4 e WebM.<br>Compatibilidade de áudio/vídeo depende do codec disponível no sistema.';$('empty').style.display='block';$('song-list').innerHTML='';$('page-title').textContent='Formatos aceitos';$('library-total').textContent=tracks.length+' música(s)';$('queue-count').textContent=queue.length;return}$('page-title').textContent=view==='queue'?'Fila de reprodução':view==='favorites'?'Favoritas':'Minha biblioteca';$('library-total').textContent=tracks.length+' música(s)';$('queue-count').textContent=queue.length;$('empty').style.display=list.length?'none':'block';$('empty').querySelector('h3').textContent=view==='queue'?'Sua fila está vazia':view==='favorites'?'Nenhuma favorita ainda':'Sua biblioteca está esperando';$('empty').querySelector('p').textContent=view==='queue'?'Adicione músicas à fila para organizar sua apresentação.':view==='favorites'?'Marque músicas com o coração para encontrá-las aqui.':'Importe arquivos KAR, MIDI, MP3, WAV, OGG, FLAC ou vídeos de karaokê.';$('song-list').innerHTML=list.map(t=>`<article class="song-row"><div class="song-cover">♫</div><div class="song-name"><b>${escapeHTML(t.title)}</b><small>${escapeHTML(t.artist||'Arquivo local')}</small></div><span class="format">${t.format.toUpperCase()}</span><button class="song-action" data-play="${t.id}" title="Reproduzir">▶</button><button class="song-action" data-fav="${t.id}" title="Favoritar">${t.favorite?"♥":"♡"}</button><button class="song-action" data-more="${t.id}" title="Adicionar à fila">＋</button></article>`).join('');$('song-list').querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>play(b.dataset.play));$('song-list').querySelectorAll('[data-more]').forEach(b=>b.onclick=()=>{queue.push(b.dataset.more);render();toast('Adicionada à fila.')});$('song-list').querySelectorAll('[data-fav]').forEach(b=>b.onclick=async()=>{const t=tracks.find(x=>x.id===b.dataset.fav);t.favorite=!t.favorite;await tx('readwrite',s=>s.put(t));render()})}
 function escapeHTML(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function stop(){
