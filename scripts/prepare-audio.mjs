@@ -50,6 +50,8 @@ await mkdir(resolve(root, "assets"), { recursive: true });
 await mkdir(resolve(root, "vendor"), { recursive: true });
 await loadSoundFont();
 await copyFile(processorPath, resolve(root, "vendor/spessasynth_processor.min.js"));
+const packageJson = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));
+await writeFile(resolve(root, "vendor/app-version.js"), `export const appVersion = ${JSON.stringify(packageJson.version)};\\n`);
 await build({
   entryPoints: [resolve(root, "audio-engine.js")],
   bundle: true,
