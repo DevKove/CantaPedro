@@ -1,0 +1,10 @@
+CantaPedro — SoundFont incluído no instalador
+
+Banco: GeneralUser GS 2.0.3
+Autor: S. Christian Collins
+Origem: https://github.com/mrbumpy409/GeneralUser-GS
+SHA-256 esperado: 9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe
+
+Licença GeneralUser GS v2.0: uso permitido sem restrições para criação musical pessoal ou comercial e em projetos de software. Os direitos dos samples individuais permanecem sujeitos às permissões dos respectivos autores. Consulte a licença integral e a documentação na origem indicada acima.
+
+Motor de síntese: spessasynth_lib, licença Apache-2.0.
