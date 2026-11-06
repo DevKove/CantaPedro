@@ -10,6 +10,8 @@ Acesse **Actions → Build CantaPedro for Windows** e baixe o artefato `CantaPed
 Para compilar no Windows com Node.js 22+:
 ```powershell
 npm install
+npm audit --audit-level=high
+npm run check
 npm test
 npm start
 npm run dist:win
