@@ -6,8 +6,8 @@
   "main": "electron/main.cjs",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win nsis",
-    "dist:win": "electron-builder --win nsis"
+    "dist": "electron-builder --win nsis --publish never",
+    "dist:win": "electron-builder --win nsis --publish never"
   },
   "devDependencies": {
     "electron": "^35.2.1",
