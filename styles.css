@@ -110,3 +110,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--lime);outline-o
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* Karaoke lyric lines: keep each synchronized phrase on a readable line. */
+.lyrics-lines p{max-width:100%;margin:0 auto 12px;white-space:pre-wrap;overflow-wrap:anywhere;text-align:center}
