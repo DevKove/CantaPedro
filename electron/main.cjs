@@ -1,5 +1,11 @@
-const { app, BrowserWindow, Menu, session } = require('electron');
+const { app, BrowserWindow, Menu, protocol, session, net } = require('electron');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
+
+protocol.registerSchemesAsPrivileged([{
+  scheme: 'cantapedro',
+  privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true }
+}]);
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -12,13 +18,24 @@ function createWindow() {
     }
   });
   win.once('ready-to-show', () => win.show());
-  win.loadFile(path.join(__dirname, '..', 'index.html'));
+  win.loadURL('cantapedro://app/index.html');
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', (event, url) => {
-    if (!url.startsWith('file://')) event.preventDefault();
+    if (!url.startsWith('cantapedro://app/')) event.preventDefault();
   });
 }
+
 app.whenReady().then(() => {
+  protocol.handle('cantapedro', request => {
+    const url = new URL(request.url);
+    const relative = decodeURIComponent(url.pathname).replace(/^\/+/, '');
+    const root = path.resolve(__dirname, '..');
+    const target = path.resolve(root, relative || 'index.html');
+    if (target !== root && !target.startsWith(root + path.sep)) {
+      return new Response('Not found', { status: 404 });
+    }
+    return net.fetch(pathToFileURL(target).toString());
+  });
   Menu.setApplicationMenu(null);
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   createWindow();
