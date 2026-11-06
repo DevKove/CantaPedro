@@ -152,3 +152,8 @@ html,body,button,input,select,textarea{font-family:"Segoe UI",Arial,sans-serif}
  .lyrics-lines{width:96vw;height:86px;padding:10px}
  .lyrics-lines p{font-size:clamp(15px,4.4vw,24px)}
 }
+
+/* Ação destrutiva da biblioteca: visual distinto e confirmação antes da remoção. */
+.btn.danger{min-height:40px;padding:9px 12px;border:1px solid #7c3943;border-radius:10px;background:#3b2029;color:#ffb7c0;font-size:11px;font-weight:700;white-space:nowrap}
+.btn.danger:hover{background:#642b37;border-color:#b84d5d;color:#fff}
+@media(max-width:600px){#clear-library{align-self:flex-end;width:100%;justify-content:center}}
