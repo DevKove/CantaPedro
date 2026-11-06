@@ -32,6 +32,8 @@ export async function createMidiEngine(initialVolume = 0.8) {
       async play(binary, shouldPlay = () => true) {
         await context.resume();
         if (!shouldPlay()) return false;
+        clearTimeout(testTimer);
+        synth.noteOff(0, 69);
         sequencer.pause();
         synth.stopAll();
         sequencer.loadNewSongList([{ binary }]);
@@ -54,6 +56,8 @@ export async function createMidiEngine(initialVolume = 0.8) {
         sequencer.currentTime = Math.max(0, Math.min(sequencer.duration, seconds));
       },
       stop() {
+        clearTimeout(testTimer);
+        synth.noteOff(0, 69);
         sequencer.pause();
         synth.stopAll();
         if (sequencer.duration) sequencer.currentTime = 0;
@@ -64,6 +68,7 @@ export async function createMidiEngine(initialVolume = 0.8) {
       async testTone() {
         await context.resume();
         clearTimeout(testTimer);
+        synth.noteOff(0, 69);
         synth.noteOn(0, 69, 100);
         testTimer = setTimeout(() => synth.noteOff(0, 69), 650);
       },
