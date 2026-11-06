@@ -1,5 +1,6 @@
 import { createMidiEngine } from './vendor/midi-engine.js';
 import { parseMidi } from './midi-parser.js';
+import { appVersion } from './vendor/app-version.js';
 
 const DB_NAME='cantapedro-db', DB_VERSION=1, STORE='tracks';
 const supported=new Set(['kar','mid','midi','mp3','wav','ogg','flac','m4a','aac','mp4','webm','mkv']);
@@ -20,7 +21,7 @@ const id=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random();
 const fmt=s=>{if(!Number.isFinite(s))return '0:00';let m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+String(sec).padStart(2,'0')};
 const titleOf=n=>n.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim();
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2600)}
-async function init(){db=await openDB();tracks=(await tx('readonly',s=>s.getAll()))||[];tracks.sort((a,b)=>String(a.title||a.name||'').localeCompare(String(b.title||b.name||''),'pt-BR'));render();$('file-picker').addEventListener('change',e=>importFiles(e.target.files));$('folder-picker').addEventListener('change',e=>importFiles(e.target.files));}
+async function init(){$('app-version').textContent='CantaPedro • '+appVersion;db=await openDB();tracks=(await tx('readonly',s=>s.getAll()))||[];tracks.sort((a,b)=>String(a.title||a.name||'').localeCompare(String(b.title||b.name||''),'pt-BR'));render();$('file-picker').addEventListener('change',e=>importFiles(e.target.files));$('folder-picker').addEventListener('change',e=>importFiles(e.target.files));}
 let importing=false;
 async function importFiles(list){
  if(importing){toast('Aguarde a importação atual terminar.');return}
