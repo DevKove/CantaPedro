@@ -1,17 +1,19 @@
 {
   "name": "cantapedro",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "private": true,
   "description": "Karaoke desktop offline para Windows",
   "main": "electron/main.cjs",
   "scripts": {
-    "start": "electron .",
-    "dist": "electron-builder --win nsis --publish never",
-    "dist:win": "electron-builder --win nsis --publish never"
+    "start": "npm run prepare:audio && electron .",
+    "dist": "npm run prepare:audio && electron-builder --win nsis --publish never",
+    "dist:win": "npm run prepare:audio && electron-builder --win nsis --publish never",
+    "prepare:audio": "node scripts/prepare-audio.mjs"
   },
   "devDependencies": {
     "electron": "^35.2.1",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.25.12"
   },
   "build": {
     "appId": "br.com.cantapedro.desktop",
@@ -24,6 +26,9 @@
       "index.html",
       "styles.css",
       "app.js",
+      "audio-engine.js",
+      "assets/**/*",
+      "vendor/**/*",
       "manifest.webmanifest",
       "sw.js",
       "electron/**/*",
@@ -47,5 +52,9 @@
       "shortcutName": "CantaPedro",
       "artifactName": "CantaPedro.Setup.${version}.${ext}"
     }
+  },
+  "dependencies": {
+    "spessasynth_core": "4.4.8",
+    "spessasynth_lib": "4.4.5"
   }
 }
