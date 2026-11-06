@@ -39,6 +39,7 @@ export async function createMidiEngine(initialVolume = 0.8) {
     const sequencer = new Sequencer(synth);
     let testTimer;
     let loadSequence = 0;
+    let loadChain = Promise.resolve();
 
     const waitForSong = sequence => new Promise((resolve, reject) => {
       const eventId = "cantapedro-song-load-" + sequence;
@@ -67,29 +68,33 @@ export async function createMidiEngine(initialVolume = 0.8) {
       get duration() { return sequencer.duration || 0; },
       get isFinished() { return sequencer.isFinished; },
       get paused() { return sequencer.paused; },
-      async play(binary, shouldPlay = () => true) {
-        await ensureAudioRunning();
-        if (!shouldPlay()) return false;
+      play(binary, shouldPlay = () => true) {
+        const task = loadChain.catch(() => false).then(async () => {
+          if (!shouldPlay()) return false;
+          await ensureAudioRunning();
 
-        clearTimeout(testTimer);
-        synth.noteOff(0, 69);
-        sequencer.pause();
-        synth.stopAll();
-
-        const sequence = ++loadSequence;
-        const loaded = waitForSong(sequence);
-        sequencer.loadNewSongList([{ binary }]);
-        await loaded;
-
-        if (sequence !== loadSequence || !shouldPlay()) {
+          clearTimeout(testTimer);
+          synth.noteOff(0, 69);
           sequencer.pause();
           synth.stopAll();
-          return false;
-        }
 
-        await ensureAudioRunning();
-        sequencer.play();
-        return true;
+          const sequence = ++loadSequence;
+          const loaded = waitForSong(sequence);
+          sequencer.loadNewSongList([{ binary }]);
+          await loaded;
+
+          if (sequence !== loadSequence || !shouldPlay()) {
+            sequencer.pause();
+            synth.stopAll();
+            return false;
+          }
+
+          await ensureAudioRunning();
+          sequencer.play();
+          return true;
+        });
+        loadChain = task.catch(() => false);
+        return task;
       },
       async resume() {
         await ensureAudioRunning();
