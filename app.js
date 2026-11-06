@@ -30,7 +30,7 @@ function stop(){
  if(mediaUrl){URL.revokeObjectURL(mediaUrl);mediaUrl=null}
  $('video-stage').hidden=true;$('video-stage').innerHTML='';
  midiEngine?.stop();
- cancelAnimationFrame(raf);$('play').textContent='▶';
+ cancelAnimationFrame(raf);$('play').textContent='▶';$('current-time').textContent='0:00';$('duration').textContent='0:00';$('progress').value=0;
 }
 async function getMidiEngine(){
  if(!midiEnginePromise)midiEnginePromise=createMidiEngine(Number($('volume').value)).then(engine=>(midiEngine=engine)).catch(error=>{midiEnginePromise=null;throw error});
