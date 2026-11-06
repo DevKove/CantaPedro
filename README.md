@@ -5,7 +5,7 @@ Aplicativo de karaokê para Windows, sem login, backend, nuvem, publicidade ou c
 ## Instalador Windows
 O GitHub Actions gera um instalador `.exe` (NSIS) para Windows x64, com atalhos no Menu Iniciar e na Área de Trabalho e opção de escolher a pasta de instalação.
 
-Acesse **Actions → Build CantaPedro for Windows** e baixe o artefato `CantaPedro-Windows-Installer` de uma execução concluída.
+Acesse **Actions → Build and Release CantaPedro for Windows** e baixe o artefato `CantaPedro-Windows-Installer` de uma execução concluída.
 
 Para compilar no Windows com Node.js 22+:
 ```powershell
