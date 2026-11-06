@@ -7,13 +7,13 @@
   <title>CantaPedro — Karaokê Offline</title>
 </head>
 <body>
-  <div class="app-shell">
+  <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button><div id="sidebar-backdrop" class="sidebar-backdrop"></div><div class="app-shell">
     <aside class="sidebar">
       <a class="brand" href="#"><span class="brand-mark">♪</span><span><b>CantaPedro</b><small>KARAOKÊ OFFLINE</small></span></a>
       <div class="side-label">BIBLIOTECA</div>
       <button class="nav active" data-view="library"><span>▤</span> Minha biblioteca</button>
       <button class="nav" data-view="queue"><span>☷</span> Fila de reprodução <i id="queue-count">0</i></button>
-      <button class="nav" data-view="favorites"><span>♡</span> Favoritas</button>
+      <button class="nav" data-view="favorites"><span>♡</span> Favoritas</button><div class="side-label side-tools">RECURSOS</div><button class="nav" id="nav-import"><span>＋</span> Importar músicas</button><button class="nav" data-view="formats"><span>▧</span> Formatos aceitos</button>
       <div class="side-bottom"><div class="offline"><span></span><div><b>Modo offline</b><small>Seus arquivos ficam no dispositivo</small></div></div><small class="version">CantaPedro • 1.0.0</small></div>
     </aside>
     <main class="main">
