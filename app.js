@@ -5,7 +5,7 @@ import { appVersion } from './vendor/app-version.js';
 const DB_NAME='cantapedro-db', DB_VERSION=1, STORE='tracks';
 const supported=new Set(['kar','mid','midi','mp3','wav','ogg','flac','m4a','aac','mp4','webm','mkv']);
 const $=id=>document.getElementById(id);
-let db, tracks=[], queue=[], current=null, media=null, mediaUrl=null, midiEngine=null, midiEnginePromise=null, raf=0, playbackToken=0, view='library';
+let db, tracks=[], queue=[], current=null, media=null, mediaUrl=null, midiEngine=null, midiEnginePromise=null, raf=0, playbackToken=0, midiPlaybackStarted=false, view='library';
 const openDB=()=>new Promise((resolve,reject)=>{const r=indexedDB.open(DB_NAME,DB_VERSION);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE))r.result.createObjectStore(STORE,{keyPath:'id'})};r.onsuccess=()=>{r.result.onversionchange=()=>r.result.close();resolve(r.result)};r.onerror=()=>reject(r.error||new Error('Não foi possível abrir o banco local.'));r.onblocked=()=>reject(new Error('O banco local está bloqueado por outra janela do CantaPedro. Feche as outras janelas e tente novamente.'))});
 const tx=(mode,fn)=>new Promise((resolve,reject)=>{
  const transaction=db.transaction(STORE,mode),store=transaction.objectStore(STORE);
@@ -61,6 +61,7 @@ function render(){const query=$('search').value.toLocaleLowerCase('pt-BR');let l
 function escapeHTML(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function stop(){
  playbackToken++;
+ midiPlaybackStarted=false;
  if(media){media.pause();media.src='';media=null}
  if(mediaUrl){URL.revokeObjectURL(mediaUrl);mediaUrl=null}
  $('video-stage').hidden=true;$('video-stage').innerHTML='';
@@ -100,6 +101,7 @@ async function playMidi(t,token){
   const started=await engine.play(binary,()=>token===playbackToken&&current===t);
   if(!started||token!==playbackToken||current!==t)return;
   const duration=Math.max(engine.duration||0,Number(t.duration)||0,1);
+  midiPlaybackStarted=true;
   $('duration').textContent=fmt(duration);$('play').textContent='Ⅱ';
   const update=()=>{
    if(token!==playbackToken||current!==t)return;
@@ -112,7 +114,7 @@ async function playMidi(t,token){
   };
   cancelAnimationFrame(raf);raf=requestAnimationFrame(update);
  }catch(error){
-  if(token===playbackToken){console.error('Falha no sintetizador SoundFont',error);toast(error.message||'Não foi possível inicializar o sintetizador de áudio.')}
+  if(token===playbackToken){midiPlaybackStarted=false;$('play').textContent='▶';console.error('Falha no sintetizador SoundFont',error);toast(error.message||'Não foi possível inicializar o sintetizador de áudio.');}
  }
 }
 function playMidiProgress(){if(!current||!midiEngine||midiEngine.paused)return;const elapsed=midiEngine.currentTime,duration=Math.max(midiEngine.duration,1);$('current-time').textContent=fmt(elapsed);$('progress').value=Math.min(1000,elapsed/duration*1000);syncLyrics(elapsed);if(midiEngine.isFinished){next();return}raf=requestAnimationFrame(playMidiProgress)}
@@ -155,7 +157,7 @@ $('clear-library').onclick=clearLibrary;
 $('add-files').onclick=$('hero-import').onclick=$('empty-import').onclick=$('nav-import').onclick=()=>$('file-picker').click();$('import-folder').onclick=()=>$('folder-picker').click();$('search').oninput=render;
 document.querySelectorAll('.nav[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x===b));render();closeSidebar()});$('menu-toggle').onclick=()=>{const open=document.body.classList.toggle('sidebar-open');$('menu-toggle').setAttribute('aria-expanded',String(open))};$('sidebar-backdrop').onclick=closeSidebar;function closeSidebar(){document.body.classList.remove('sidebar-open');$('menu-toggle').setAttribute('aria-expanded','false')}
 $('test-audio').onclick=async()=>{try{const engine=await getMidiEngine();await engine.testTone();toast('Teste de instrumento SoundFont iniciado.')}catch(error){console.error(error);toast(error.message||'Falha ao testar o áudio.')}};
-$('play').onclick=async()=>{if(!current){const first=tracks.find(t=>!['kar','mid','midi'].includes(t.format)||t.notes?.some(note=>note.type==='on'));if(first)play(first.id);return}if(media){media.paused?media.play():media.pause();$('play').textContent=media.paused?'▶':'Ⅱ'}else if(['kar','mid','midi'].includes(current.format)){try{const engine=await getMidiEngine();if(engine.paused){await engine.resume();$('play').textContent='Ⅱ';raf=requestAnimationFrame(()=>playMidiProgress())}else{engine.pause();$('play').textContent='▶';cancelAnimationFrame(raf)}}catch(error){toast(error.message||'Falha no áudio.')}}};
+$('play').onclick=async()=>{if(!current){const first=tracks.find(t=>!['kar','mid','midi'].includes(t.format)||t.notes?.some(note=>note.type==='on'));if(first)play(first.id);return}if(media){media.paused?media.play():media.pause();$('play').textContent=media.paused?'▶':'Ⅱ'}else if(['kar','mid','midi'].includes(current.format)){if(!midiPlaybackStarted){play(current.id);return}try{const engine=await getMidiEngine();if(engine.paused){await engine.resume();$('play').textContent='Ⅱ';raf=requestAnimationFrame(()=>playMidiProgress())}else{engine.pause();$('play').textContent='▶';cancelAnimationFrame(raf)}}catch(error){toast(error.message||'Falha no áudio.')}}};
 $('next').onclick=next;$('prev').onclick=()=>{if(current)play(current.id)};$('volume').oninput=()=>{const value=Number($('volume').value);if(media)media.volume=value;midiEngine?.setVolume(value)};
 $('progress').oninput=()=>{const ratio=Number($('progress').value)/1000;if(media&&media.duration)media.currentTime=media.duration*ratio;else if(midiEngine&&midiEngine.duration)midiEngine.seek(midiEngine.duration*ratio)};
 $('toggle-lyrics').onclick=()=>$('lyrics-panel').classList.toggle('open');$('close-lyrics').onclick=()=>$('lyrics-panel').classList.remove('open');$('fullscreen').onclick=()=>document.documentElement.requestFullscreen?.();
