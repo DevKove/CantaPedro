@@ -29,7 +29,7 @@ A versão PWA não é o alvo de distribuição. O instalador Electron para Windo
 ## Formatos
 KAR, MID, MIDI, MP3, WAV, OGG, FLAC, M4A, AAC, MP4 e WebM. Reprodução depende do suporte a codecs do Chromium/Electron.
 
-O leitor KAR/MIDI interpreta eventos MIDI e eventos de texto/letra. O sintetizador é básico. CDG+MP3, ZIP e banco General MIDI profissional ainda não estão incluídos.
+O leitor KAR/MIDI valida os limites de cada trilha, interpreta eventos de notas, tempo e letras, e reconhece metadados de título. A reprodução MIDI usa o SpessaSynth com o banco GeneralUser GS incluído no instalador. CDG+MP3 e arquivos ZIP não são suportados.
 
 ## Atalhos
 - Espaço: reproduzir/pausar.
