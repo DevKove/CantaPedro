@@ -1,7 +1,7 @@
 const DB_NAME='cantapedro-db', DB_VERSION=1, STORE='tracks';
 const supported=new Set(['kar','mid','midi','mp3','wav','ogg','flac','m4a','aac','mp4','webm','mkv']);
 const $=id=>document.getElementById(id);
-let db, tracks=[], queue=[], current=null, media=null, mediaUrl=null, audioCtx=null, midiMaster=null, midiNodes=[], midiStart=0, midiEvents=[], lyrics=[], raf=0, view='library', favorites=new Set();
+let db, tracks=[], queue=[], current=null, media=null, mediaUrl=null, audioCtx=null, midiMaster=null, midiCompressor=null, midiNodes=[], midiStart=0, midiEvents=[], lyrics=[], raf=0, view='library', favorites=new Set();
 const openDB=()=>new Promise((resolve,reject)=>{const r=indexedDB.open(DB_NAME,DB_VERSION);r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:'id'});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
 const tx=(mode,fn)=>new Promise((resolve,reject)=>{const t=db.transaction(STORE,mode),s=t.objectStore(STORE);let req=fn(s);t.oncomplete=()=>resolve(req?.result);t.onerror=()=>reject(t.error)});
 const ext=f=>f.name.split('.').pop().toLowerCase();
@@ -51,20 +51,27 @@ function parseMidi(buffer){
  const notes=all.map(e=>({...e,time:toSec(e.tick)})).sort((a,b)=>a.time-b.time);
  const lyricEvents=meta.filter(x=>x.type===5);
  const source=lyricEvents.length?lyricEvents:meta.filter(x=>x.type===1);
- const lines=[];let line='',lineTime=0;
- const flush=()=>{const text=line.replace(/\s+/g,' ').trim();if(text)lines.push({time:lineTime,text});line=''};
+ const lines=[];let line='',lineTime=0,lastLyricTime=0;
+ const flush=()=>{const text=line.replace(/\s+/g,' ').trim();if(text)lines.push({time:lineTime,text});line='';lastLyricTime=0};
+ const appendLyric=(chunk,eventTime)=>{
+  const value=chunk.replace(/\s+/g,' ');
+  if(!value.trim())return;
+  if(line&&(line.length+value.length>54||eventTime-lastLyricTime>1.7))flush();
+  if(!line)lineTime=eventTime;
+  if(line&&!/\s$/.test(line)&&!/^\s/.test(value)&&!/[.,!?;:]$/.test(line))line+=' ';
+  line+=value;lastLyricTime=eventTime;
+ };
  for(const event of source.sort((a,b)=>a.tick-b.tick)){
-  let text=event.text;
+  const text=event.text;
   if(/^@(T|L|K|V|I|KMIDI|LEN|W)/i.test(text))continue;
-  if(!line)lineTime=toSec(event.tick);
-  const parts=text.split(/([\\/\r\n]+)/);
-  for(const part of parts){
-   if(/^[\\/\r\n]+$/.test(part)){flush();lineTime=toSec(event.tick)}
-   else line+=part;
+  const eventTime=toSec(event.tick);
+  for(const part of text.split(/([\\/\r\n]+)/)){
+   if(/^[\\/\r\n]+$/.test(part))flush();
+   else appendLyric(part,eventTime);
   }
  }
  flush();
- const end=Math.max(0,...notes.map(x=>x.time));
+ const end=Math.max(0,...notes.map(x=>x.time),...lines.map(x=>x.time));
  return{title:meta.find(x=>x.type===3)?.text||'',artist:'Arquivo MIDI/KAR',lyrics:lines,notes,duration:end+2};
 }
 function render(){const query=$('search').value.toLocaleLowerCase('pt-BR');let list=tracks.filter(t=>(t.title+' '+t.artist+' '+t.name).toLocaleLowerCase('pt-BR').includes(query));if(view==='favorites')list=list.filter(t=>t.favorite);if(view==='queue')list=queue.map(id=>tracks.find(t=>t.id===id)).filter(Boolean);if(view==='formats'){list=[];$('empty').querySelector('h3').textContent='Formatos compatíveis';$('empty').querySelector('p').innerHTML='KAR, MID, MIDI · MP3, WAV, OGG, FLAC, M4A, AAC · MP4 e WebM.<br>Compatibilidade de áudio/vídeo depende do codec disponível no sistema.';$('empty').style.display='block';$('song-list').innerHTML='';$('page-title').textContent='Formatos aceitos';$('library-total').textContent=tracks.length+' música(s)';$('queue-count').textContent=queue.length;return}$('page-title').textContent=view==='queue'?'Fila de reprodução':view==='favorites'?'Favoritas':'Minha biblioteca';$('library-total').textContent=tracks.length+' música(s)';$('queue-count').textContent=queue.length;$('empty').style.display=list.length?'none':'block';$('empty').querySelector('h3').textContent=view==='queue'?'Sua fila está vazia':view==='favorites'?'Nenhuma favorita ainda':'Sua biblioteca está esperando';$('empty').querySelector('p').textContent=view==='queue'?'Adicione músicas à fila para organizar sua apresentação.':view==='favorites'?'Marque músicas com o coração para encontrá-las aqui.':'Importe arquivos KAR, MIDI, MP3, WAV, OGG, FLAC ou vídeos de karaokê.';$('song-list').innerHTML=list.map(t=>`<article class="song-row"><div class="song-cover">♫</div><div class="song-name"><b>${escapeHTML(t.title)}</b><small>${escapeHTML(t.artist||'Arquivo local')}</small></div><span class="format">${t.format.toUpperCase()}</span><button class="song-action" data-play="${t.id}" title="Reproduzir">▶</button><button class="song-action" data-fav="${t.id}" title="Favoritar">${t.favorite?"♥":"♡"}</button><button class="song-action" data-more="${t.id}" title="Adicionar à fila">＋</button></article>`).join('');$('song-list').querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>play(b.dataset.play));$('song-list').querySelectorAll('[data-more]').forEach(b=>b.onclick=()=>{queue.push(b.dataset.more);render();toast('Adicionada à fila.')});$('song-list').querySelectorAll('[data-fav]').forEach(b=>b.onclick=async()=>{const t=tracks.find(x=>x.id===b.dataset.fav);t.favorite=!t.favorite;await tx('readwrite',s=>s.put(t));render()})}
@@ -77,9 +84,19 @@ async function ensureAudio(){
  if(!audioCtx||audioCtx.state==='closed')audioCtx=new AC({latencyHint:'interactive'});
  if(audioCtx.state!=='running')await audioCtx.resume();
  if(audioCtx.state!=='running')throw new Error('O Windows não liberou a saída de áudio');
- if(!midiMaster){midiMaster=audioCtx.createGain();midiMaster.gain.value=Number($('volume').value);midiMaster.connect(audioCtx.destination)}
+ if(!midiMaster){
+  midiMaster=audioCtx.createGain();
+  midiMaster.gain.value=Number($('volume').value)*.72;
+  midiCompressor=audioCtx.createDynamicsCompressor();
+  midiCompressor.threshold.value=-20;
+  midiCompressor.knee.value=18;
+  midiCompressor.ratio.value=10;
+  midiCompressor.attack.value=.003;
+  midiCompressor.release.value=.18;
+  midiMaster.connect(midiCompressor).connect(audioCtx.destination);
+ }
  midiMaster.gain.cancelScheduledValues(audioCtx.currentTime);
- midiMaster.gain.setTargetAtTime(Number($('volume').value),audioCtx.currentTime,.01);
+ midiMaster.gain.setTargetAtTime(Number($('volume').value)*.72,audioCtx.currentTime,.025);
  return audioCtx;
 }
 async function testAudio(){
@@ -105,14 +122,14 @@ async function playMidi(t){
     osc.type='sine';
     osc.frequency.setValueAtTime(440*Math.pow(2,(event.note-69)/12),at);
     gain.gain.setValueAtTime(.0001,at);
-    gain.gain.exponentialRampToValueAtTime(Math.max(.004,(event.velocity/127)*.24),at+.025);
+    gain.gain.exponentialRampToValueAtTime(Math.max(.0015,(event.velocity/127)*.075),at+.012);
     osc.connect(gain).connect(midiMaster);osc.start(at);
     const stack=voices.get(key)||[];stack.push({osc,gain});voices.set(key,stack);midiNodes.push(osc);
    }else{
     const stack=voices.get(key),voice=stack?.pop();
     if(voice){
      voice.gain.gain.cancelScheduledValues(at);
-     voice.gain.gain.setTargetAtTime(.0001,at,.045);
+     voice.gain.gain.setTargetAtTime(.0001,at,.075);
      try{voice.osc.stop(at+.2)}catch{}
      if(!stack.length)voices.delete(key);
     }
@@ -133,16 +150,17 @@ async function playMidi(t){
  }catch(error){console.error('Falha na reprodução MIDI',error);toast(error.message||'Falha ao iniciar o sintetizador MIDI.')}
 }
 function showLyrics(t){
- const lines=t.lyrics||[];
- $('lyrics-lines').innerHTML=lines.length?lines.map((x,i)=>`<p data-line="${i}">${escapeHTML(x.text)}</p>`).join(''):'<p>Este arquivo não possui letras sincronizadas embutidas.</p>';
+ const first=t.lyrics?.[0]?.text||'Este arquivo não possui letras sincronizadas embutidas.';
+ $('lyrics-lines').innerHTML='<p id="active-lyric" class="current"></p>';
+ $('lyrics-lines').querySelector('#active-lyric').textContent=first;
 }
 function syncLyrics(time){
- if(!current?.lyrics?.length)return;
- let idx=-1;current.lyrics.forEach((line,i)=>{if(line.time<=time)idx=i});
- const nodes=$('lyrics-lines').querySelectorAll('p');
- nodes.forEach((p,i)=>p.classList.toggle('current',i===idx));
- const active=$('lyrics-lines').querySelector('.current');
- if(active)active.scrollIntoView({block:'center',behavior:'auto'});
+ const lines=current?.lyrics;
+ if(!lines?.length)return;
+ let low=0,high=lines.length-1,idx=-1;
+ while(low<=high){const mid=(low+high)>>1;if(lines[mid].time<=time){idx=mid;low=mid+1}else high=mid-1}
+ const target=$('lyrics-lines').querySelector('#active-lyric');
+ if(target)target.textContent=idx>=0?lines[idx].text:'♪';
 }
 function next(){if(!queue.length){stop();current=null;$('now-title').textContent='Reprodução finalizada';return}const id=queue.shift();render();play(id)}
 $('add-files').onclick=$('hero-import').onclick=$('empty-import').onclick=$('nav-import').onclick=()=>$('file-picker').click();$('import-folder').onclick=()=>$('folder-picker').click();$('search').oninput=render;
