@@ -113,3 +113,19 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--lime);outline-o
 
 /* Karaoke lyric lines: keep each synchronized phrase on a readable line. */
 .lyrics-lines p{max-width:100%;margin:0 auto 12px;white-space:pre-wrap;overflow-wrap:anywhere;text-align:center}
+
+/* Typography and lyric layout: native Windows fonts, fully offline. */
+:root{font-family:"Segoe UI",Arial,sans-serif;font-synthesis:none}
+html,body,button,input,select,textarea{font-family:"Segoe UI",Arial,sans-serif}
+.brand b,.topbar h1,.hero h2,.empty h3,.lyrics-panel h2{font-family:"Segoe UI",Arial,sans-serif}
+.brand b{font-size:19px;font-weight:700;letter-spacing:-.25px}
+.topbar h1{font-size:27px;font-weight:700;letter-spacing:-.35px}
+.hero h2{font-weight:700;line-height:1.18;letter-spacing:-.55px}
+.lyrics-panel{font-family:"Segoe UI",Arial,sans-serif}
+.lyrics-lines{width:min(100%,1000px);max-height:68%;margin:22px auto 0;padding:8px 20px 28px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:16px}
+.lyrics-lines p{width:100%;max-width:900px;margin:0;padding:0 12px;text-align:center;white-space:normal;overflow-wrap:break-word;word-break:normal;font-size:clamp(22px,3vw,34px);font-weight:600;line-height:1.55;letter-spacing:0;color:#dce2ed}
+.lyrics-lines p.current{color:var(--lime);font-weight:700;text-shadow:0 2px 18px #c9f47735}
+.lyrics-panel h2{font-size:clamp(22px,2.5vw,30px);font-weight:700;letter-spacing:-.3px}
+.player-right{gap:10px}
+#test-audio{white-space:nowrap;min-height:34px;padding:7px 10px;font-size:11px}
+@media(max-width:850px){.lyrics-lines{padding-inline:8px}.lyrics-lines p{font-size:clamp(20px,4vw,29px)}}
