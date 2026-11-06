@@ -130,9 +130,9 @@ export function parseMidi(buffer) {
   const source = (textEvents.length ? textEvents : metaEvents.filter(event => event.type === 1))
     .sort((a, b) => a.tick - b.tick);
 
-  const titleMeta = metaEvents.find(event => event.type === 3)?.text || '';
+  const titleMeta = metaEvents.find(event => event.type === 3)?.text.trim() || '';
   const karTitle = metaEvents.find(event => event.text.startsWith('@T'))?.text.slice(2).trim() || '';
-  const karArtist = metaEvents.find(event => event.text.startsWith('@I'))?.text.slice(2).trim() || '';
+  const karArtist = '';
   const lyrics = [];
   let line = '', lineTime = 0, lastLyricTime = 0;
   const flush = () => {
