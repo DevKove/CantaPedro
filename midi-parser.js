@@ -1,4 +1,9 @@
-const cleanText = bytes => {\n  let value;\n  try { value = new TextDecoder('utf-8', { fatal: true }).decode(bytes); }\n  catch { value = new TextDecoder('latin1').decode(bytes); }\n  return value.replace(/[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]/g, '').trim();\n};
+const cleanText = bytes => {
+  let value;
+  try { value = new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch { value = new TextDecoder('latin1').decode(bytes); }
+  return value.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '').trim();
+};
 
 function readVar(data, state, end) {
   let value = 0;
