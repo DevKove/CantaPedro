@@ -4,7 +4,7 @@ import { parseMidi } from './midi-parser.js';
 const DB_NAME='cantapedro-db', DB_VERSION=1, STORE='tracks';
 const supported=new Set(['kar','mid','midi','mp3','wav','ogg','flac','m4a','aac','mp4','webm','mkv']);
 const $=id=>document.getElementById(id);
-let db, tracks=[], queue=[], current=null, media=null, mediaUrl=null, midiEngine=null, midiEnginePromise=null, lyrics=[], raf=0, view='library', favorites=new Set();
+let db, tracks=[], queue=[], current=null, media=null, mediaUrl=null, midiEngine=null, midiEnginePromise=null, raf=0, playbackToken=0, view='library', favorites=new Set();
 const openDB=()=>new Promise((resolve,reject)=>{const r=indexedDB.open(DB_NAME,DB_VERSION);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE))r.result.createObjectStore(STORE,{keyPath:'id'})};r.onsuccess=()=>{r.result.onversionchange=()=>r.result.close();resolve(r.result)};r.onerror=()=>reject(r.error||new Error('Não foi possível abrir o banco local.'));r.onblocked=()=>reject(new Error('O banco local está bloqueado por outra janela do CantaPedro. Feche as outras janelas e tente novamente.'))});
 const tx=(mode,fn)=>new Promise((resolve,reject)=>{
  const transaction=db.transaction(STORE,mode),store=transaction.objectStore(STORE);
@@ -25,6 +25,7 @@ async function importFiles(list){const files=[...list].filter(f=>supported.has(e
 function render(){const query=$('search').value.toLocaleLowerCase('pt-BR');let list=tracks.filter(t=>(t.title+' '+t.artist+' '+t.name).toLocaleLowerCase('pt-BR').includes(query));if(view==='favorites')list=list.filter(t=>t.favorite);if(view==='queue')list=queue.map(id=>tracks.find(t=>t.id===id)).filter(Boolean);if(view==='formats'){list=[];$('empty').querySelector('h3').textContent='Formatos compatíveis';$('empty').querySelector('p').innerHTML='KAR, MID, MIDI · MP3, WAV, OGG, FLAC, M4A, AAC · MP4 e WebM.<br>Compatibilidade de áudio/vídeo depende do codec disponível no sistema.';$('empty').style.display='block';$('song-list').innerHTML='';$('page-title').textContent='Formatos aceitos';$('library-total').textContent=tracks.length+' música(s)';$('queue-count').textContent=queue.length;return}$('page-title').textContent=view==='queue'?'Fila de reprodução':view==='favorites'?'Favoritas':'Minha biblioteca';$('library-total').textContent=tracks.length+' música(s)';$('queue-count').textContent=queue.length;$('empty').style.display=list.length?'none':'block';$('empty').querySelector('h3').textContent=view==='queue'?'Sua fila está vazia':view==='favorites'?'Nenhuma favorita ainda':'Sua biblioteca está esperando';$('empty').querySelector('p').textContent=view==='queue'?'Adicione músicas à fila para organizar sua apresentação.':view==='favorites'?'Marque músicas com o coração para encontrá-las aqui.':'Importe arquivos KAR, MIDI, MP3, WAV, OGG, FLAC ou vídeos de karaokê.';$('song-list').innerHTML=list.map(t=>`<article class="song-row"><div class="song-cover">♫</div><div class="song-name"><b>${escapeHTML(t.title)}</b><small>${escapeHTML(t.artist||'Arquivo local')}</small></div><span class="format">${t.format.toUpperCase()}</span><button class="song-action" data-play="${t.id}" title="Reproduzir">▶</button><button class="song-action" data-fav="${t.id}" title="Favoritar">${t.favorite?"♥":"♡"}</button><button class="song-action" data-more="${t.id}" title="Adicionar à fila">＋</button></article>`).join('');$('song-list').querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>play(b.dataset.play));$('song-list').querySelectorAll('[data-more]').forEach(b=>b.onclick=()=>{queue.push(b.dataset.more);render();toast('Adicionada à fila.')});$('song-list').querySelectorAll('[data-fav]').forEach(b=>b.onclick=async()=>{const t=tracks.find(x=>x.id===b.dataset.fav);t.favorite=!t.favorite;await tx('readwrite',s=>s.put(t));render()})}
 function escapeHTML(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function stop(){
+ playbackToken++;
  if(media){media.pause();media.src='';media=null}
  if(mediaUrl){URL.revokeObjectURL(mediaUrl);mediaUrl=null}
  $('video-stage').hidden=true;$('video-stage').innerHTML='';
@@ -35,15 +36,36 @@ async function getMidiEngine(){
  if(!midiEnginePromise)midiEnginePromise=createMidiEngine(Number($('volume').value)).then(engine=>(midiEngine=engine)).catch(error=>{midiEnginePromise=null;throw error});
  return midiEnginePromise;
 }
-async function play(trackId){const t=tracks.find(x=>x.id===trackId);if(!t)return;stop();current=t;$('now-title').textContent=t.title;$('now-artist').textContent=t.artist;$('lyrics-title').textContent=t.title;showLyrics(t);if(['kar','mid','midi'].includes(t.format)){if(!t.notes?.some(note=>note.type==='on')){toast('Este arquivo MIDI não contém eventos de notas reproduzíveis.');return}playMidi(t)}else{const url=URL.createObjectURL(t.blob);mediaUrl=url;const isVideo=['mp4','webm','mkv'].includes(t.format);media=document.createElement(isVideo?'video':'audio');media.src=url;media.volume=Number($('volume').value);if(isVideo){media.controls=true;media.playsInline=true;$('video-stage').appendChild(media);$('video-stage').hidden=false;}media.onloadedmetadata=()=>{$('duration').textContent=fmt(media.duration)};media.ontimeupdate=()=>{$('current-time').textContent=fmt(media.currentTime);if(media.duration)$('progress').value=media.currentTime/media.duration*1000};media.onended=next;media.play().then(()=>$('play').textContent='Ⅱ').catch(()=>toast('Não foi possível reproduzir este formato neste navegador.'))}}
-async function playMidi(t){
+async function play(trackId){
+ const t=tracks.find(x=>x.id===trackId);if(!t)return;
+ stop();const token=playbackToken;current=t;
+ $('now-title').textContent=t.title;$('now-artist').textContent=t.artist;$('lyrics-title').textContent=t.title;showLyrics(t);
+ if(['kar','mid','midi'].includes(t.format)){
+  if(!t.notes?.some(note=>note.type==='on')){toast('Este arquivo MIDI não contém eventos de notas reproduzíveis.');return}
+  playMidi(t,token);return;
+ }
+ const url=URL.createObjectURL(t.blob);mediaUrl=url;
+ const isVideo=['mp4','webm','mkv'].includes(t.format);
+ const element=document.createElement(isVideo?'video':'audio');
+ media=element;element.src=url;element.volume=Number($('volume').value);
+ if(isVideo){element.controls=true;element.playsInline=true;$('video-stage').appendChild(element);$('video-stage').hidden=false;}
+ element.onloadedmetadata=()=>{if(token===playbackToken)$('duration').textContent=fmt(element.duration)};
+ element.ontimeupdate=()=>{if(token!==playbackToken)return;$('current-time').textContent=fmt(element.currentTime);if(element.duration)$('progress').value=element.currentTime/element.duration*1000};
+ element.onended=()=>{if(token===playbackToken&&current===t)next()};
+ element.onerror=()=>{if(token===playbackToken)toast('O arquivo não pôde ser decodificado neste sistema.')};
+ element.play().then(()=>{if(token===playbackToken)$('play').textContent='Ⅱ'}).catch(error=>{if(token===playbackToken){console.warn('Falha ao reproduzir mídia',error);toast('Não foi possível reproduzir este formato neste sistema.')}});
+}
+async function playMidi(t,token){
  try{
   const engine=await getMidiEngine();
-  await engine.play(await t.blob.arrayBuffer());
+  const binary=await t.blob.arrayBuffer();
+  if(token!==playbackToken||current!==t)return;
+  const started=await engine.play(binary,()=>token===playbackToken&&current===t);
+  if(!started||token!==playbackToken||current!==t)return;
   const duration=Math.max(engine.duration||0,Number(t.duration)||0,1);
   $('duration').textContent=fmt(duration);$('play').textContent='Ⅱ';
   const update=()=>{
-   if(current!==t)return;
+   if(token!==playbackToken||current!==t)return;
    const elapsed=engine.currentTime;
    $('current-time').textContent=fmt(elapsed);
    $('progress').value=Math.min(1000,elapsed/duration*1000);
@@ -52,7 +74,9 @@ async function playMidi(t){
    raf=requestAnimationFrame(update);
   };
   cancelAnimationFrame(raf);raf=requestAnimationFrame(update);
- }catch(error){console.error('Falha no sintetizador SoundFont',error);toast(error.message||'Não foi possível inicializar o sintetizador de áudio.')}
+ }catch(error){
+  if(token===playbackToken){console.error('Falha no sintetizador SoundFont',error);toast(error.message||'Não foi possível inicializar o sintetizador de áudio.')}
+ }
 }
 function playMidiProgress(){if(!current||!midiEngine||midiEngine.paused)return;const elapsed=midiEngine.currentTime,duration=Math.max(midiEngine.duration,1);$('current-time').textContent=fmt(elapsed);$('progress').value=Math.min(1000,elapsed/duration*1000);syncLyrics(elapsed);if(midiEngine.isFinished){next();return}raf=requestAnimationFrame(playMidiProgress)}
 function showLyrics(t){
