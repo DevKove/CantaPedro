@@ -163,6 +163,24 @@ function syncLyrics(time){
  if(target)target.textContent=idx>=0?lines[idx].text:'♪';
 }
 function next(){if(!queue.length){stop();current=null;$('now-title').textContent='Reprodução finalizada';return}const id=queue.shift();render();play(id)}
+async function clearLibrary(){
+ if(!tracks.length){toast('A biblioteca já está vazia.');return}
+ const confirmed=window.confirm('Tem certeza de que deseja apagar TODAS as músicas da biblioteca? Esta ação não pode ser desfeita. Os arquivos originais no computador não serão apagados.');
+ if(!confirmed)return;
+ try{
+  stop();
+  await tx('readwrite',s=>s.clear());
+  tracks=[];queue=[];current=null;favorites.clear();
+  $('now-title').textContent='Nenhuma música selecionada';
+  $('now-artist').textContent='Importe suas músicas para começar';
+  $('current-time').textContent='0:00';$('duration').textContent='0:00';$('progress').value=0;
+  $('lyrics-title').textContent='Letras sincronizadas';
+  $('lyrics-lines').innerHTML='<p>Importe uma música com letras sincronizadas.</p>';
+  render();
+  toast('Biblioteca limpa. Os arquivos originais foram preservados.');
+ }catch(error){console.error('Falha ao limpar biblioteca',error);toast('Não foi possível limpar a biblioteca.')}
+}
+$('clear-library').onclick=clearLibrary;
 $('add-files').onclick=$('hero-import').onclick=$('empty-import').onclick=$('nav-import').onclick=()=>$('file-picker').click();$('import-folder').onclick=()=>$('folder-picker').click();$('search').oninput=render;
 document.querySelectorAll('.nav[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x===b));render();closeSidebar()});$('menu-toggle').onclick=()=>{const open=document.body.classList.toggle('sidebar-open');$('menu-toggle').setAttribute('aria-expanded',String(open))};$('sidebar-backdrop').onclick=closeSidebar;function closeSidebar(){document.body.classList.remove('sidebar-open');$('menu-toggle').setAttribute('aria-expanded','false')}
 $('test-audio').onclick=testAudio;$('play').onclick=()=>{if(!current){if(tracks[0])play(tracks[0].id);return}if(media){media.paused?media.play():media.pause();$('play').textContent=media.paused?'▶':'Ⅱ'}else if(audioCtx?.state==='running'){audioCtx.suspend();$('play').textContent='▶'}else if(audioCtx){audioCtx.resume();$('play').textContent='Ⅱ'}};
