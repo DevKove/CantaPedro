@@ -129,3 +129,26 @@ html,body,button,input,select,textarea{font-family:"Segoe UI",Arial,sans-serif}
 .player-right{gap:10px}
 #test-audio{white-space:nowrap;min-height:34px;padding:7px 10px;font-size:11px}
 @media(max-width:850px){.lyrics-lines{padding-inline:8px}.lyrics-lines p{font-size:clamp(20px,4vw,29px)}}
+
+/* Karaoke subtitle mode: show one horizontal synchronized line, never a vertical lyric stack. */
+.lyrics-panel{justify-content:center;gap:12px}
+.lyrics-lines{
+  display:flex;align-items:center;justify-content:center;
+  width:min(96vw,1400px);max-width:1400px;height:clamp(72px,16vh,150px);
+  max-height:none;overflow:hidden;margin:12px auto 0;padding:12px 24px;
+  border-radius:16px;background:#080b12b8;border:1px solid #ffffff18;
+}
+.lyrics-lines p{
+  display:block;width:100%;max-width:100%;margin:0;padding:0;
+  text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  overflow-wrap:normal;word-break:keep-all;
+  font-family:"Segoe UI",Arial,sans-serif;
+  font-size:clamp(18px,3.2vw,42px);font-weight:700;line-height:1.2;
+  letter-spacing:0;color:#f4f6fb;
+}
+.lyrics-lines p.current{color:var(--lime);text-shadow:0 2px 20px #c9f47745}
+@media(max-width:600px){
+ .lyrics-panel{padding:18px 10px}
+ .lyrics-lines{width:96vw;height:86px;padding:10px}
+ .lyrics-lines p{font-size:clamp(15px,4.4vw,24px)}
+}
