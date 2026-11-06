@@ -1,6 +1,6 @@
 {
   "name": "cantapedro",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "private": true,
   "description": "Karaoke desktop offline para Windows",
   "main": "electron/main.cjs",
@@ -8,7 +8,8 @@
     "start": "npm run prepare:audio && electron .",
     "dist": "npm run prepare:audio && electron-builder --win nsis --publish never",
     "dist:win": "npm run prepare:audio && electron-builder --win nsis --publish never",
-    "prepare:audio": "node scripts/prepare-audio.mjs"
+    "prepare:audio": "node scripts/prepare-audio.mjs",
+    "test": "node --test"
   },
   "devDependencies": {
     "electron": "^35.2.1",
@@ -26,6 +27,7 @@
       "index.html",
       "styles.css",
       "app.js",
+      "midi-parser.js",
       "audio-engine.js",
       "assets/**/*",
       "vendor/**/*",
