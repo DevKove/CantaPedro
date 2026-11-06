@@ -41,8 +41,8 @@ export async function createMidiEngine(initialVolume = 0.8) {
     let loadSequence = 0;
 
     const waitForSong = sequence => new Promise((resolve, reject) => {
-      const eventId = "cantapedro-song-load";
-      const errorId = "cantapedro-midi-error";
+      const eventId = "cantapedro-song-load-" + sequence;
+      const errorId = "cantapedro-midi-error-" + sequence;
       const timer = setTimeout(() => {
         cleanup();
         reject(new Error("O MIDI demorou demais para ser preparado pelo sintetizador."));
