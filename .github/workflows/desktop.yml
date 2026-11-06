@@ -29,6 +29,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Audit dependency vulnerabilities
+        run: npm audit --audit-level=high
       - name: Validate JavaScript syntax
         run: npm run check
       - name: Run automated regression tests
