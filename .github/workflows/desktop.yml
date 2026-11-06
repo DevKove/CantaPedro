@@ -1,4 +1,4 @@
-name: Build CantaPedro Desktop
+name: Build CantaPedro for Windows
 on:
   workflow_dispatch:
   push:
@@ -26,21 +26,4 @@ jobs:
         with:
           name: CantaPedro-Windows-Installer
           path: release/*.exe
-          if-no-files-found: error
-  linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm install
-      - run: npm run dist:linux
-      - uses: actions/upload-artifact@v4
-        with:
-          name: CantaPedro-Linux
-          path: |
-            release/*.AppImage
-            release/*.deb
           if-no-files-found: error
