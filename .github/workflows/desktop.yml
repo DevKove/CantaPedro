@@ -8,6 +8,8 @@ on:
       - 'index.html'
       - 'styles.css'
       - 'app.js'
+      - 'audio-engine.js'
+      - 'scripts/**'
       - 'package.json'
       - '.github/workflows/desktop.yml'
 permissions:
@@ -34,11 +36,11 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v1.1.5
-          name: CantaPedro 1.1.5
+          tag_name: v1.1.6
+          name: CantaPedro 1.1.6
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           overwrite_files: true
-          files: release/CantaPedro.Setup.1.1.5.exe
+          files: release/CantaPedro.Setup.1.1.6.exe
           token: ${{ secrets.GITHUB_TOKEN }}
