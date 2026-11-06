@@ -57,10 +57,9 @@ function parseMidi(buffer){
   let text=event.text;
   if(/^@(T|L|K|V|I|KMIDI|LEN|W)/i.test(text))continue;
   if(!line)lineTime=toSec(event.tick);
-  text=text.replace(/\//g,'');
-  const parts=text.split(/([\\\r\n]+)/);
+  const parts=text.split(/([\\/\r\n]+)/);
   for(const part of parts){
-   if(/^[\\\r\n]+$/.test(part)){flush();lineTime=toSec(event.tick)}
+   if(/^[\\/\r\n]+$/.test(part)){flush();lineTime=toSec(event.tick)}
    else line+=part;
   }
  }
