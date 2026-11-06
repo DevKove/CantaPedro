@@ -1,6 +1,6 @@
 {
   "name": "cantapedro",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "description": "Karaoke desktop offline para Windows",
   "main": "electron/main.cjs",
@@ -17,9 +17,34 @@
     "appId": "br.com.cantapedro.desktop",
     "productName": "CantaPedro",
     "asar": true,
-    "directories": { "output": "release" },
-    "files": ["index.html","styles.css","app.js","manifest.webmanifest","sw.js","electron/**/*","package.json"],
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true, "shortcutName": "CantaPedro" }
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "index.html",
+      "styles.css",
+      "app.js",
+      "manifest.webmanifest",
+      "sw.js",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CantaPedro"
+    }
   }
 }
