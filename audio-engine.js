@@ -29,12 +29,19 @@ export async function createMidiEngine(initialVolume = 0.8) {
       get duration() { return sequencer.duration || 0; },
       get isFinished() { return sequencer.isFinished; },
       get paused() { return sequencer.paused; },
-      async play(binary) {
+      async play(binary, shouldPlay = () => true) {
         await context.resume();
+        if (!shouldPlay()) return false;
         sequencer.pause();
         synth.stopAll();
         sequencer.loadNewSongList([{ binary }]);
+        if (!shouldPlay()) {
+          sequencer.pause();
+          synth.stopAll();
+          return false;
+        }
         sequencer.play();
+        return true;
       },
       async resume() {
         await context.resume();
