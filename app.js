@@ -56,10 +56,11 @@ function parseMidi(buffer){
  const appendLyric=(chunk,eventTime)=>{
   const value=chunk.replace(/\s+/g,' ');
   if(!value.trim())return;
-  if(line&&(line.length+value.length>54||eventTime-lastLyricTime>1.7))flush();
+  if(line&&(line.length+value.length>72||eventTime-lastLyricTime>2.8))flush();
   if(!line)lineTime=eventTime;
-  if(line&&!/\s$/.test(line)&&!/^\s/.test(value)&&!/[.,!?;:]$/.test(line))line+=' ';
-  line+=value;lastLyricTime=eventTime;
+  // KAR stores syllables as separate lyric events; only preserve spaces explicitly present in the source.
+  const syllable=value.replace(/[-_=]+$/,'').replace(/^[-_=]+/,'');
+  line+=syllable;lastLyricTime=eventTime;
  };
  for(const event of source.sort((a,b)=>a.tick-b.tick)){
   const text=event.text;
@@ -86,17 +87,17 @@ async function ensureAudio(){
  if(audioCtx.state!=='running')throw new Error('O Windows não liberou a saída de áudio');
  if(!midiMaster){
   midiMaster=audioCtx.createGain();
-  midiMaster.gain.value=Number($('volume').value)*.72;
+  midiMaster.gain.value=Number($('volume').value)*.38;
   midiCompressor=audioCtx.createDynamicsCompressor();
-  midiCompressor.threshold.value=-20;
-  midiCompressor.knee.value=18;
-  midiCompressor.ratio.value=10;
-  midiCompressor.attack.value=.003;
-  midiCompressor.release.value=.18;
+  midiCompressor.threshold.value=-26;
+  midiCompressor.knee.value=12;
+  midiCompressor.ratio.value=12;
+  midiCompressor.attack.value=.008;
+  midiCompressor.release.value=.24;
   midiMaster.connect(midiCompressor).connect(audioCtx.destination);
  }
  midiMaster.gain.cancelScheduledValues(audioCtx.currentTime);
- midiMaster.gain.setTargetAtTime(Number($('volume').value)*.72,audioCtx.currentTime,.025);
+ midiMaster.gain.setTargetAtTime(Number($('volume').value)*.38,audioCtx.currentTime,.04);
  return audioCtx;
 }
 async function testAudio(){
@@ -114,29 +115,33 @@ async function playMidi(t){
   const ctx=await ensureAudio(),start=ctx.currentTime+.06;
   midiStart=start;midiEvents=t.notes;
   const voices=new Map();
+  let activeVoiceCount=0;
+  const maxPolyphony=24;
   const ordered=[...t.notes].sort((x,y)=>x.time-y.time);
   for(const event of ordered){
    const at=start+Math.max(0,event.time),key=event.ch+':'+event.note;
    if(event.type==='on'){
+    if(activeVoiceCount>=maxPolyphony)continue;
     const osc=ctx.createOscillator(),gain=ctx.createGain();
     osc.type='sine';
     osc.frequency.setValueAtTime(440*Math.pow(2,(event.note-69)/12),at);
     gain.gain.setValueAtTime(.0001,at);
-    gain.gain.exponentialRampToValueAtTime(Math.max(.0015,(event.velocity/127)*.075),at+.012);
+    gain.gain.exponentialRampToValueAtTime(Math.max(.0008,(event.velocity/127)*.028),at+.025);
     osc.connect(gain).connect(midiMaster);osc.start(at);
-    const stack=voices.get(key)||[];stack.push({osc,gain});voices.set(key,stack);midiNodes.push(osc);
+    const stack=voices.get(key)||[];stack.push({osc,gain});voices.set(key,stack);midiNodes.push(osc);activeVoiceCount++;
    }else{
     const stack=voices.get(key),voice=stack?.pop();
     if(voice){
+     activeVoiceCount=Math.max(0,activeVoiceCount-1);
      voice.gain.gain.cancelScheduledValues(at);
-     voice.gain.gain.setTargetAtTime(.0001,at,.075);
-     try{voice.osc.stop(at+.2)}catch{}
+     voice.gain.gain.setTargetAtTime(.0001,at,.11);
+     try{voice.osc.stop(at+.35)}catch{}
      if(!stack.length)voices.delete(key);
     }
    }
   }
   const duration=Math.max(Number(t.duration)||0,...ordered.map(x=>x.time),1);
-  for(const stack of voices.values())for(const voice of stack){const stopAt=start+duration;voice.gain.gain.setTargetAtTime(.0001,stopAt,.04);try{voice.osc.stop(stopAt+.2)}catch{}}
+  for(const stack of voices.values())for(const voice of stack){const stopAt=start+duration;voice.gain.gain.setTargetAtTime(.0001,stopAt,.12);try{voice.osc.stop(stopAt+.4)}catch{}}
   $('duration').textContent=fmt(duration);$('play').textContent='Ⅱ';
   const update=()=>{
    if(!current||!audioCtx||audioCtx.state!=='running')return;
