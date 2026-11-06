@@ -1,0 +1,47 @@
+name: Build CantaPedro Desktop
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'electron/**'
+      - 'index.html'
+      - 'styles.css'
+      - 'app.js'
+      - 'package.json'
+      - '.github/workflows/desktop.yml'
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npm run dist:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CantaPedro-Windows-Installer
+          path: release/*.exe
+          if-no-files-found: error
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npm run dist:linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CantaPedro-Linux
+          path: |
+            release/*.AppImage
+            release/*.deb
+          if-no-files-found: error
