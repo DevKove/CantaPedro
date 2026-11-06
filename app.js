@@ -76,7 +76,7 @@ async function play(trackId){
  stop();const token=playbackToken;current=t;
  $('now-title').textContent=t.title;$('now-artist').textContent=t.artist;$('lyrics-title').textContent=t.title;showLyrics(t);
  if(['kar','mid','midi'].includes(t.format)){
-  if(!t.notes?.some(note=>note.type==='on')){toast('Este arquivo MIDI não contém eventos de notas reproduzíveis.');return}
+  if(!t.notes?.some(note=>note.type==='on')){current=null;$('now-title').textContent='Arquivo MIDI sem notas';$('now-artist').textContent='Não há eventos reproduzíveis neste arquivo';toast('Este arquivo MIDI não contém eventos de notas reproduzíveis.');return}
   playMidi(t,token);return;
  }
  const url=URL.createObjectURL(t.blob);mediaUrl=url;
@@ -155,7 +155,7 @@ $('clear-library').onclick=clearLibrary;
 $('add-files').onclick=$('hero-import').onclick=$('empty-import').onclick=$('nav-import').onclick=()=>$('file-picker').click();$('import-folder').onclick=()=>$('folder-picker').click();$('search').oninput=render;
 document.querySelectorAll('.nav[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x===b));render();closeSidebar()});$('menu-toggle').onclick=()=>{const open=document.body.classList.toggle('sidebar-open');$('menu-toggle').setAttribute('aria-expanded',String(open))};$('sidebar-backdrop').onclick=closeSidebar;function closeSidebar(){document.body.classList.remove('sidebar-open');$('menu-toggle').setAttribute('aria-expanded','false')}
 $('test-audio').onclick=async()=>{try{const engine=await getMidiEngine();await engine.testTone();toast('Teste de instrumento SoundFont iniciado.')}catch(error){console.error(error);toast(error.message||'Falha ao testar o áudio.')}};
-$('play').onclick=async()=>{if(!current){if(tracks[0])play(tracks[0].id);return}if(media){media.paused?media.play():media.pause();$('play').textContent=media.paused?'▶':'Ⅱ'}else if(['kar','mid','midi'].includes(current.format)){try{const engine=await getMidiEngine();if(engine.paused){await engine.resume();$('play').textContent='Ⅱ';raf=requestAnimationFrame(()=>playMidiProgress())}else{engine.pause();$('play').textContent='▶';cancelAnimationFrame(raf)}}catch(error){toast(error.message||'Falha no áudio.')}}};
+$('play').onclick=async()=>{if(!current){const first=tracks.find(t=>!['kar','mid','midi'].includes(t.format)||t.notes?.some(note=>note.type==='on'));if(first)play(first.id);return}if(media){media.paused?media.play():media.pause();$('play').textContent=media.paused?'▶':'Ⅱ'}else if(['kar','mid','midi'].includes(current.format)){try{const engine=await getMidiEngine();if(engine.paused){await engine.resume();$('play').textContent='Ⅱ';raf=requestAnimationFrame(()=>playMidiProgress())}else{engine.pause();$('play').textContent='▶';cancelAnimationFrame(raf)}}catch(error){toast(error.message||'Falha no áudio.')}}};
 $('next').onclick=next;$('prev').onclick=()=>{if(current)play(current.id)};$('volume').oninput=()=>{const value=Number($('volume').value);if(media)media.volume=value;midiEngine?.setVolume(value)};
 $('progress').oninput=()=>{const ratio=Number($('progress').value)/1000;if(media&&media.duration)media.currentTime=media.duration*ratio;else if(midiEngine&&midiEngine.duration)midiEngine.seek(midiEngine.duration*ratio)};
 $('toggle-lyrics').onclick=()=>$('lyrics-panel').classList.toggle('open');$('close-lyrics').onclick=()=>$('lyrics-panel').classList.remove('open');$('fullscreen').onclick=()=>document.documentElement.requestFullscreen?.();
