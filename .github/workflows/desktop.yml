@@ -34,11 +34,11 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v1.1.4
-          name: CantaPedro 1.1.4
+          tag_name: v1.1.5
+          name: CantaPedro 1.1.5
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           overwrite_files: true
-          files: release/CantaPedro.Setup.1.1.4.exe
+          files: release/CantaPedro.Setup.1.1.5.exe
           token: ${{ secrets.GITHUB_TOKEN }}
