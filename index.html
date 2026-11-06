@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="theme-color" content="#10131b"><meta name="description" content="CantaPedro — karaokê offline com biblioteca local e suporte a arquivos KAR/MIDI.">
   <link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./styles.css">
   <title>CantaPedro — Karaokê Offline</title>
@@ -15,7 +15,7 @@
       <button class="nav active" data-view="library"><span>▤</span> Minha biblioteca</button>
       <button class="nav" data-view="queue"><span>☷</span> Fila de reprodução <i id="queue-count">0</i></button>
       <button class="nav" data-view="favorites"><span>♡</span> Favoritas</button><div class="side-label side-tools">RECURSOS</div><button class="nav" id="nav-import"><span>＋</span> Importar músicas</button><button class="nav" data-view="formats"><span>▧</span> Formatos aceitos</button>
-      <div class="side-bottom"><div class="offline"><span></span><div><b>Modo offline</b><small>Seus arquivos ficam no dispositivo</small></div></div><small class="version">CantaPedro • 1.1.5</small></div>
+      <div class="side-bottom"><div class="offline"><span></span><div><b>Modo offline</b><small>Seus arquivos ficam no dispositivo</small></div></div><small class="version">CantaPedro • 1.1.6</small></div>
     </aside>
     <main class="main">
       <header class="topbar"><div><span class="eyebrow">SEU PALCO, SUAS MÚSICAS</span><h1 id="page-title">Minha biblioteca</h1></div><div class="top-actions"><button id="add-files" class="btn primary">＋ Importar músicas</button><button id="test-audio" class="btn subtle" title="Testar a saída de áudio">♫ Testar som</button><button id="fullscreen" class="icon-btn" title="Tela cheia">⛶</button></div></header>
@@ -33,5 +33,5 @@
   <input id="file-picker" type="file" multiple hidden accept=".kar,.mid,.midi,.mp3,.wav,.ogg,.flac,.m4a,.aac,.mp4,.webm,.mkv">
   <input id="folder-picker" type="file" multiple hidden webkitdirectory directory>
   <div id="toast" class="toast" role="status"></div>
-  <script src="./app.js"></script>
+  <script type="module" src="./app.js"></script>
 </body></html>
