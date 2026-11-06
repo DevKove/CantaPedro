@@ -29,6 +29,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Validate JavaScript syntax
+        run: npm run check
       - name: Run automated regression tests
         run: npm test
       - name: Build Windows installer
