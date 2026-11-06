@@ -39,5 +39,5 @@ jobs:
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: release/CantaPedro Setup 1.1.2.exe
+          files: release/CantaPedro.Setup.1.1.2.exe
           token: ${{ secrets.GITHUB_TOKEN }}
