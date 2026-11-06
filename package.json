@@ -31,8 +31,6 @@
       "audio-engine.js",
       "assets/**/*",
       "vendor/**/*",
-      "manifest.webmanifest",
-      "sw.js",
       "electron/**/*",
       "package.json"
     ],
