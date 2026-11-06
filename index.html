@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10131b"><meta name="description" content="CantaPedro — karaokê offline com biblioteca local e suporte a arquivos KAR/MIDI.">
+  <link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./styles.css">
+  <title>CantaPedro — Karaokê Offline</title>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#"><span class="brand-mark">♪</span><span><b>CantaPedro</b><small>KARAOKÊ OFFLINE</small></span></a>
+      <div class="side-label">BIBLIOTECA</div>
+      <button class="nav active" data-view="library"><span>▤</span> Minha biblioteca</button>
+      <button class="nav" data-view="queue"><span>☷</span> Fila de reprodução <i id="queue-count">0</i></button>
+      <button class="nav" data-view="favorites"><span>♡</span> Favoritas</button>
+      <div class="side-bottom"><div class="offline"><span></span><div><b>Modo offline</b><small>Seus arquivos ficam no dispositivo</small></div></div><small class="version">CantaPedro • 1.0.0</small></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div><span class="eyebrow">SEU PALCO, SUAS MÚSICAS</span><h1 id="page-title">Minha biblioteca</h1></div><div class="top-actions"><button id="add-files" class="btn primary">＋ Importar músicas</button><button id="fullscreen" class="icon-btn" title="Tela cheia">⛶</button></div></header>
+      <section class="hero"><div class="hero-copy"><span class="pill">● 100% OFFLINE</span><h2>Sua próxima música<br><em>começa aqui.</em></h2><p>Organize seu repertório, monte a fila e cante acompanhando as letras.</p><button class="btn light" id="hero-import">Adicionar músicas <b>→</b></button></div><div class="hero-art"><div class="disc"><div class="disc-center">♪</div></div><span class="note n1">♫</span><span class="note n2">♪</span><span class="equalizer"><i></i><i></i><i></i><i></i><i></i></span></div></section>
+      <section class="toolbar"><label class="search"><span>⌕</span><input id="search" placeholder="Buscar por música ou artista..." autocomplete="off"><kbd>/</kbd></label><div class="toolbar-right"><span id="library-total">0 músicas</span><button id="import-folder" class="btn subtle">▣ Importar pasta</button></div></section>
+      <section id="content-view"><div id="empty" class="empty"><div class="empty-icon">♫</div><h3>Sua biblioteca está esperando</h3><p>Importe arquivos KAR, MIDI, MP3, WAV, OGG, FLAC ou vídeos de karaokê.</p><button class="btn primary" id="empty-import">＋ Selecionar arquivos</button><small>Os arquivos são armazenados somente neste dispositivo.</small></div><div id="song-list" class="song-list"></div></section>
+    </main>
+  </div>
+  <section class="player">
+    <div class="now-playing"><div class="cover">♫</div><div class="track-meta"><b id="now-title">Nenhuma música selecionada</b><small id="now-artist">Adicione arquivos à biblioteca</small></div></div>
+    <div class="player-center"><div class="controls"><button id="prev" class="control">◀</button><button id="play" class="play-btn">▶</button><button id="next" class="control">▶|</button></div><div class="timeline"><span id="current-time">0:00</span><input id="progress" type="range" min="0" max="1000" value="0"><span id="duration">0:00</span></div></div>
+    <div class="player-right"><button id="toggle-lyrics" class="icon-btn" title="Exibir letras">▤</button><span class="volume-icon">◖))</span><input id="volume" type="range" min="0" max="1" step=".01" value=".8"></div>
+  </section>
+  <section id="lyrics-panel" class="lyrics-panel"><button id="close-lyrics" class="close">×</button><span class="eyebrow">ACOMPANHE A CANÇÃO</span><h2 id="lyrics-title">Escolha uma música</h2><div id="lyrics-lines" class="lyrics-lines"><p>As letras sincronizadas de arquivos KAR aparecerão aqui.</p></div></section>
+  <input id="file-picker" type="file" multiple hidden accept=".kar,.mid,.midi,.mp3,.wav,.ogg,.flac,.m4a,.aac,.mp4,.webm,.mkv">
+  <input id="folder-picker" type="file" multiple hidden webkitdirectory directory>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="./app.js"></script>
+</body></html>
