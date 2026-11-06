@@ -99,36 +99,6 @@ async function getMidiEngine(){
  return midiEnginePromise;
 }
 async function play(trackId){const t=tracks.find(x=>x.id===trackId);if(!t)return;stop();current=t;$('now-title').textContent=t.title;$('now-artist').textContent=t.artist;$('lyrics-title').textContent=t.title;showLyrics(t);if(['kar','mid','midi'].includes(t.format)){if(!t.notes){toast('Este arquivo MIDI não contém uma faixa reproduzível.');return}playMidi(t)}else{const url=URL.createObjectURL(t.blob);mediaUrl=url;const isVideo=['mp4','webm','mkv'].includes(t.format);media=document.createElement(isVideo?'video':'audio');media.src=url;media.volume=Number($('volume').value);if(isVideo){media.controls=true;media.playsInline=true;$('video-stage').appendChild(media);$('video-stage').hidden=false;}media.onloadedmetadata=()=>{$('duration').textContent=fmt(media.duration)};media.ontimeupdate=()=>{$('current-time').textContent=fmt(media.currentTime);if(media.duration)$('progress').value=media.currentTime/media.duration*1000};media.onended=next;media.play().then(()=>$('play').textContent='Ⅱ').catch(()=>toast('Não foi possível reproduzir este formato neste navegador.'))}}
-async function ensureAudio(){
- const AC=window.AudioContext||window.webkitAudioContext;
- if(!AC)throw new Error('AudioContext indisponível neste sistema');
- if(!audioCtx||audioCtx.state==='closed')audioCtx=new AC({latencyHint:'interactive'});
- if(audioCtx.state!=='running')await audioCtx.resume();
- if(audioCtx.state!=='running')throw new Error('O Windows não liberou a saída de áudio');
- if(!midiMaster){
-  midiMaster=audioCtx.createGain();
-  midiMaster.gain.value=Number($('volume').value)*.38;
-  midiCompressor=audioCtx.createDynamicsCompressor();
-  midiCompressor.threshold.value=-26;
-  midiCompressor.knee.value=12;
-  midiCompressor.ratio.value=12;
-  midiCompressor.attack.value=.008;
-  midiCompressor.release.value=.24;
-  midiMaster.connect(midiCompressor).connect(audioCtx.destination);
- }
- midiMaster.gain.cancelScheduledValues(audioCtx.currentTime);
- midiMaster.gain.setTargetAtTime(Number($('volume').value)*.38,audioCtx.currentTime,.04);
- return audioCtx;
-}
-async function testAudio(){
- try{
-  const ctx=await ensureAudio(),osc=ctx.createOscillator(),gain=ctx.createGain(),now=ctx.currentTime;
-  osc.type='sine';osc.frequency.setValueAtTime(660,now);
-  gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.22,now+.035);gain.gain.setTargetAtTime(.0001,now+.32,.055);
-  osc.connect(gain).connect(midiMaster);osc.start(now);osc.stop(now+.65);
-  toast('Teste de áudio iniciado. Você ouviu o sinal?');
- }catch(error){console.error('Teste de áudio falhou',error);toast(error.message||'Não foi possível acessar a saída de áudio do Windows.')}
-}
 async function playMidi(t){
  try{
   const engine=await getMidiEngine();
