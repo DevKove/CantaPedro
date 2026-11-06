@@ -30,7 +30,7 @@ A distribuição é exclusiva para Windows x64 por meio do instalador Electron. 
 - Faça backup dos dados locais antes de limpar o perfil do aplicativo.
 
 ## Formatos
-KAR, MID, MIDI, MP3, WAV, OGG, FLAC, M4A, AAC, MP4 e WebM. Reprodução depende do suporte a codecs do Chromium/Electron.
+KAR, MID, MIDI, MP3, WAV, OGG, FLAC, M4A, AAC, MP4, WebM e MKV. Reprodução de áudio/vídeo depende do suporte ao contêiner e aos codecs disponíveis no Chromium/Electron.
 
 O leitor KAR/MIDI valida os limites de cada trilha, interpreta eventos de notas, tempo e letras, e reconhece metadados de título. A reprodução MIDI usa o SpessaSynth com o banco GeneralUser GS incluído no instalador. CDG+MP3 e arquivos ZIP não são suportados.
 
