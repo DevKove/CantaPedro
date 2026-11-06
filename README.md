@@ -10,16 +10,17 @@ Acesse **Actions → Build CantaPedro for Windows** e baixe o artefato `CantaPed
 Para compilar no Windows com Node.js 22+:
 ```powershell
 npm install
+npm test
 npm start
 npm run dist:win
 ```
-O instalador será criado em `release/\`.
+O instalador será criado na pasta `release/`. Os testes automatizados do parser MIDI/KAR são executados antes de cada publicação.
 
 ## Execução offline
 O desktop carrega a interface localmente e não depende de conexão com a internet após a instalação. O instalador precisa ser baixado uma vez. As músicas importadas ficam no armazenamento local do dispositivo.
 
-## Navegador / PWA
-A versão PWA não é o alvo de distribuição. O instalador Electron para Windows é a opção recomendada para instalação e uso offline.
+## Plataforma
+A distribuição é exclusiva para Windows x64 por meio do instalador Electron. A interface web/PWA não faz parte do produto.
 
 ## Dados e privacidade
 - Arquivos importados são mantidos no armazenamento local do dispositivo.
